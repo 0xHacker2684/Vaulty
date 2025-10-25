@@ -4,13 +4,13 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC4626.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 
 /**
  * @title CustomVault
  * @dev Custom ERC4626 vault with deposit/withdraw fees and limits
  */
-contract vaulty is ERC4626, Ownable, ReentrancyGuard {
+contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
     // State variables
     uint256 private depositFee; // Fee in basis points (100 = 1%)
     uint256 private withdrawFee; // Fee in basis points (100 = 1%)
@@ -46,9 +46,11 @@ contract vaulty is ERC4626, Ownable, ReentrancyGuard {
         IERC20 asset_,
         string memory name_,
         string memory symbol_,
-        address _feeRecipient
+        address _feeRecipient,
+        uint256 _maxDepositLimit
     ) ERC4626(asset_) ERC20(name_, symbol_) Ownable(msg.sender) {
         feeRecipient = _feeRecipient;
+        maxDepositLimit = _maxDepositLimit;
     }
     
     // ============ Overridden Deposit Functions ============
@@ -63,7 +65,6 @@ contract vaulty is ERC4626, Ownable, ReentrancyGuard {
         nonReentrant 
         returns (uint256) 
     {
-        require(depositsEnabled, "Deposits are disabled");
         require(assets <= maxDepositLimit, "Exceeds max deposit limit");
         require(assets > 0, "Cannot deposit zero");
         
@@ -101,7 +102,6 @@ contract vaulty is ERC4626, Ownable, ReentrancyGuard {
         nonReentrant 
         returns (uint256) 
     {
-        require(depositsEnabled, "Deposits are disabled");
         require(shares > 0, "Cannot mint zero shares");
         
         // Calculate assets needed including fee
@@ -137,8 +137,6 @@ contract vaulty is ERC4626, Ownable, ReentrancyGuard {
         address receiver,
         address owner
     ) public virtual override nonReentrant returns (uint256) {
-        require(withdrawalsEnabled, "Withdrawals are disabled");
-        require(assets >= minWithdrawAmount, "Below minimum withdraw");
         require(assets > 0, "Cannot withdraw zero");
         
         // Calculate shares needed
@@ -175,7 +173,6 @@ contract vaulty is ERC4626, Ownable, ReentrancyGuard {
         address receiver,
         address owner
     ) public virtual override nonReentrant returns (uint256) {
-        require(withdrawalsEnabled, "Withdrawals are disabled");
         require(shares > 0, "Cannot redeem zero shares");
         
         // Check and update allowance
@@ -350,29 +347,4 @@ contract vaulty is ERC4626, Ownable, ReentrancyGuard {
         return totalFeesCollected;
     }
     
-    /**
-     * @dev Get vault information
-     * @return Struct containing all vault parameters
-     */
-    function getVaultInfo() external view returns (
-        uint256 _depositFee,
-        uint256 _withdrawFee,
-        uint256 _maxDepositLimit,
-        uint256 _minWithdrawAmount,
-        bool _depositsEnabled,
-        bool _withdrawalsEnabled,
-        address _feeRecipient,
-        uint256 _totalFeesCollected
-    ) {
-        return (
-            depositFee,
-            withdrawFee,
-            maxDepositLimit,
-            minWithdrawAmount,
-            depositsEnabled,
-            withdrawalsEnabled,
-            feeRecipient,
-            totalFeesCollected
-        );
-    }
 }
