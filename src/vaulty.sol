@@ -57,7 +57,14 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
         require(assets > 0, "Cannot deposit zero");
         require(assets <= maxDepositLimit, "Exceeds max deposit limit");
 
-        uint256 shares = previewDeposit(assetsAfterFee);
+        uint256 shares;
+
+        if (totalSupply() == 0){
+            shares = assets;
+        }else {
+             shares = previewDeposit(assets);
+        }
+
         
         SafeERC20.safeTransferFrom(IERC20(asset()), msg.sender, address(this), assets);
         
@@ -78,7 +85,12 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
     {
         require(shares > 0, "Cannot mint zero shares");
         
-        uint256 assets = previewMint(shares);
+        uint256 assets;
+        if (totalSupply() == 0){
+            assets = shares;
+        }else {
+            assets = previewMint(shares);
+        }
         
         require(assets <= maxDepositLimit, "Exceeds max deposit limit");
         
@@ -86,9 +98,9 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
         
         _mint(receiver, shares);
         
-        emit Deposit(msg.sender, receiver, totalAssets, shares);
+        emit Deposit(msg.sender, receiver, assets, shares);
         
-        return totalAssets;
+        return shares;
     }
     
    
