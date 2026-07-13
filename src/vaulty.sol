@@ -44,6 +44,8 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
     ) ERC4626(asset_) ERC20(name_, symbol_) Ownable(msg.sender) {
         feeRecipient = _feeRecipient;
         maxDepositLimit = _maxDepositLimit;
+        depositsEnabled = true;
+        withdrawalsEnabled = true;
     }
     
     
@@ -54,6 +56,7 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
         nonReentrant 
         returns (uint256) 
     {
+        require(depositsEnabled, "Deposits disabled");
         require(assets > 0, "Cannot deposit zero");
         require(assets <= maxDepositLimit, "Exceeds max deposit limit");
 
@@ -77,6 +80,7 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
         nonReentrant 
         returns (uint256) 
     {
+        require(depositsEnabled, "Deposits disabled");
         require(shares > 0, "Cannot mint zero shares");
         
         uint256 assets = previewMint(shares);
@@ -99,6 +103,7 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
         address receiver,
         address owner
     ) public virtual override nonReentrant returns (uint256) {
+        require(withdrawalsEnabled, "Withdrawals disabled");
         require(assets > 0, "Cannot withdraw zero");
         
         uint256 shares = previewWithdraw(assets);
@@ -121,6 +126,7 @@ contract Vaulty is ERC4626, Ownable, ReentrancyGuard {
         address receiver,
         address owner
     ) public virtual override nonReentrant returns (uint256) {
+        require(withdrawalsEnabled, "Withdrawals disabled");
         require(shares > 0, "Cannot redeem zero shares");
         
         if (msg.sender != owner) {
